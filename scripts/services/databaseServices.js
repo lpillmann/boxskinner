@@ -1,39 +1,41 @@
+'use strict';
+
 /**  
   * @desc these services will hold functions for database (Firebase) read/write (conceptual system MODEL --> holds database and functions to manipulate it)
   * examples include ReadService.getUserTagsContent, ReadService.getAllUsers, WriteService.newEntry
   * @required AngularFire services ($firebaseArray, $firebaseObject)  
   * @used_by newEntryViewHandler.js, searchUsersCtrl.js, searchProjectsCtrl.js
 */  
-skillFuelApp
-.factory("ReadService", ["$firebaseArray", "$firebaseObject",
+angular.module('boxskinnerApp')
+.factory('ReadService', ['$firebaseArray', '$firebaseObject',
   function($firebaseArray, $firebaseObject) {
     var factory = {};
 
-    var FBURL = "https://skillfuel.firebaseio.com";
+    var FBURL = 'https://boxskinner.firebaseio.com';
 
     factory.getAllUsers = function () {  
-      var ref = new Firebase(FBURL + "/users");
+      var ref = new Firebase(FBURL + '/users');
       return $firebaseArray(ref);
-    }
+    };
 
     factory.getUserInfo = function (userId) {  
-      var ref = new Firebase(FBURL + "/users/" + userId);
+      var ref = new Firebase(FBURL + '/users/' + userId);
       return $firebaseObject(ref);
-    }
+    };
 
     factory.getAllTags = function () {  
-      var ref = new Firebase(FBURL + "/tagIds");
+      var ref = new Firebase(FBURL + '/tagIds');
       return $firebaseArray(ref);
-    }
+    };
 
     factory.getAllTagNames = function () {  
       return getAllTagNames;
-    }
+    };
 
     var getAllTagNames = function () {  
-      var ref = new Firebase(FBURL + "/tagNames");
+      var ref = new Firebase(FBURL + '/tagNames');
       return $firebaseArray(ref);
-    }
+    };
 
     factory.getAllTagNamesAsArray = function () {  
       var arr = [];
@@ -44,17 +46,17 @@ skillFuelApp
                 angular.forEach(data, function(value, key) {
                   arr.push(value.$id);
                   //debug
-									//console.log("tag names as array, pushed: " + value.$id)
+									//console.log('tag names as array, pushed: ' + value.$id)
                   //console.log(Object.keys(data));
-                  //console.log("key: " + key);
+                  //console.log('key: ' + key);
                 });
                   
               })
               .catch(function(error){
-                console.error("Error:", error);
+                console.error('Error:', error);
               });
       return arr;
-    }
+    };
 
     factory.getAllTagNamesAsString = function () {  
       var str = '';
@@ -64,62 +66,62 @@ skillFuelApp
               .then(function(data){ 
                 angular.forEach(data, function(value, key) {
                   str += value.$id;
-                  console.log("tag names as string, concatenated: " + value.$id)
+                  console.log('tag names as string, concatenated: ' + value.$id)
                   console.log(Object.keys(data));
-                  //console.log("key: " + key);
+                  //console.log('key: ' + key);
                 });
                   
               })
               .catch(function(error){
-                console.error("Error:", error);
+                console.error('Error:', error);
               });
       return str;
-    }
+    };
     
     // 'join' service to get tags content from a given user. Uses Firebase.util 
     // (throws many warnings because this library is quite old)
     factory.getUserTagsContent = function (userId) {  
       //debug
-			//console.log(">>>> userId in service util: " + userId);
+			//console.log('>>>> userId in service util: ' + userId);
       var ref = Firebase.util.join(
       {
-        ref: new Firebase(FBURL + "/users/" + userId + "/tags/"),
+        ref: new Firebase(FBURL + '/users/' + userId + '/tags/'),
         intersects: true
       },
-        new Firebase(FBURL + "/tagIds/")
+        new Firebase(FBURL + '/tagIds/')
       );
 
       return $firebaseObject(ref);
-    }
+    };
 
     factory.getTagContent = function (tagId) {  
-      var ref = new Firebase(FBURL + "/tagIds/" + tagId);
+      var ref = new Firebase(FBURL + '/tagIds/' + tagId);
       
       obj = $firebaseObject(ref);
       // return it as a synchronized object
       return obj;
-    }
+    };
 
     factory.getUserTags = function (userId) {  
       // create a reference to the Firebase where we will store our data
-      var ref = new Firebase(FBURL + "/users/" + userId);
+      var ref = new Firebase(FBURL + '/users/' + userId);
       var tagsRef = ref.child('tags');
 
       obj = $firebaseObject(tagsRef);
       
       // return it as a synchronized object
       return obj;
-    }
+    };
 
     factory.getProjectsByUser = function (userId) {
-      var ref = new Firebase(FBURL + "/users/" + userId + "/projects");      
+      var ref = new Firebase(FBURL + '/users/' + userId + '/projects');      
       return $firebaseObject(ref);
-    }
+    };
 
     factory.getProjectsById = function (projectId) {
-      var ref = new Firebase(FBURL + "/projects/" + projectId);      
+      var ref = new Firebase(FBURL + '/projects/' + projectId);      
       return $firebaseObject(ref);
-    }
+    };
 
     return factory;
     
@@ -134,81 +136,81 @@ skillFuelApp
     
     Comments above each one specify the order they are called. 'addUser' starts everything here inside this service
     
-    Argument objects are "assembled" in factory.newEntry and given to 'addUser'
+    Argument objects are 'assembled' in factory.newEntry and given to 'addUser'
       *** New routines for writing must start by formating the objects in this function
 
   OBS: Generated tags and users IDs are in the Firebase format (randomly with timestamp), which is more reliable
        and easier to use (e.g. order by date of creation)
 ******************************************************************************************************************/
 
-.factory("WriteService", ["$firebaseArray", "$firebaseObject", "$rootScope",
+.factory('WriteService', ['$firebaseArray', '$firebaseObject', '$rootScope',
   function($firebaseArray, $firebaseObject, $rootScope) {
      
     var factory = {};
 
-    var FBURL = "https://skillfuel.firebaseio.com";
+    var FBURL = 'https://boxskinner.firebaseio.com';
     
     var newUserId = null;
     var newProjectId = null; // need to use array in the future (multiple projects)
     var newTagId = null;
-    newUserTagsObj = {};
-    newProjectTagsObj = {}; 
+    var newUserTagsObj = {};    // it was an object from previous project (added 'var')
+    var newProjectTagsObj = {}; // it was an object from previous project (added 'var')
 
     // >>> PROJECT ROUTINES TO BE ADDED <<<
 
     // called 4th
     var addUserToTag = function (tagId, userId) {
-      var ref = new Firebase(FBURL + "/tagIds/" + tagId);
+      var ref = new Firebase(FBURL + '/tagIds/' + tagId);
       ref.child('user').set(userId);
     }
 
     // called 4th
     var addUserToProject = function (projectId, userId) {
-      var ref = new Firebase(FBURL + "/projects/" + projectId);
+      var ref = new Firebase(FBURL + '/projects/' + projectId);
       ref.child('members').child(userId).set(true);
     }
 
     // called 4th
     var addProjectToTag = function (tagId, projectId) {
-      var ref = new Firebase(FBURL + "/tagIds/" + tagId);
+      var ref = new Firebase(FBURL + '/tagIds/' + tagId);
       ref.child('project').set(projectId);
     }
 
     // called 4th
     var addProjectToUser = function (userId, projectId) {
-      var ref = new Firebase(FBURL + "/users/" + userId);
+      var ref = new Firebase(FBURL + '/users/' + userId);
       ref.child('projects').child(projectId).set(true);
     }
 
     // called 3rd (together with addTagToUser)
     var addTagToTagNames = function (tagName, tagId) {
-      var ref = new Firebase(FBURL + "/tagNames/" + tagName);
+      var ref = new Firebase(FBURL + '/tagNames/' + tagName);
       ref.child(tagId).set(true);
     }
 
     // called 3rd
     var addTagToUser = function(userId, tagId) {
-      var ref = new Firebase(FBURL + "/users/" + userId + "/tags/" + tagId);
+      var ref = new Firebase(FBURL + '/users/' + userId + '/tags/' + tagId);
       ref.set(true);
       addUserToTag(tagId, userId);
     }
 
     // called 3rd
     var addTagToProject = function(projectId, tagId) {
-      var ref = new Firebase(FBURL + "/projects/" + projectId + "/tags/" + tagId);
+      var ref = new Firebase(FBURL + '/projects/' + projectId + '/tags/' + tagId);
       ref.set(true);
       addProjectToTag(tagId, projectId);
     }
 
     //called 2nd
     var createTags = function(newTagsObject, toWhere) {
-      var ref = new Firebase(FBURL + "/tagIds");
+      var ref = new Firebase(FBURL + '/tagIds');
       var list = $firebaseArray(ref);
 
       angular.forEach(newTagsObject, function(value, key) {
         list.$add(value).then(function(ref) {
           var id = ref.key();
-          console.log("added tag with id " + id);
+          console.log('added tag with id ' + id);
           list.$indexFor(id); // returns location in the array
           newTagId = id;
           if(toWhere === 'user') { // decides if links to user or project
@@ -220,18 +222,18 @@ skillFuelApp
           addTagToTagNames(value.name, newTagId);
         });
         console.log(Object.keys(value));
-        console.log("key: " + key);
+        console.log('key: ' + key);
       });
     }
    
    // called 2nd
    var addProject = function(newProjectObj) {
-     var ref = new Firebase(FBURL + "/projects");
+     var ref = new Firebase(FBURL + '/projects');
      var list = $firebaseArray(ref);
 
      list.$add(newProjectObj).then(function(ref) {
        var id = ref.key();
-        console.log("added project with id " + id);
+        console.log('added project with id ' + id);
         list.$indexFor(id); // returns location in the array
         newProjectId = id;
         addProjectToUser(newUserId, newProjectId);
@@ -242,18 +244,36 @@ skillFuelApp
 
    // called 1st
     var addUser = function(newUserObj) {
-      var ref = new Firebase(FBURL + "/users");
+      var ref = new Firebase(FBURL + '/users');
       var list = $firebaseArray(ref);
 
       list.$add(newUserObj).then(function(ref) {
        var id = ref.key();
-       console.log("added user with id " + id);
+       console.log('added user with id ' + id);
 			 $rootScope.myid = id;
-			 console.log("$rootScope.myid value = " + $rootScope.myid);
+			 console.log('$rootScope.myid value = ' + $rootScope.myid);
        list.$indexFor(id); // returns location in the array
        newUserId = id;
        createTags(newUserTagsObj, 'user'); // just create tags for this object (has all the new tags)
        addProject(newProjectObj);
+       console.log(Object.keys(newUserTagsObj));
+     });
+    }
+
+    //monster edit to test this stuff
+    factory.addUserTest = function(newUserObj) {
+      var ref = new Firebase(FBURL + '/users');
+      var list = $firebaseArray(ref);
+
+      list.$add(newUserObj).then(function(ref) {
+       var id = ref.key();
+       console.log('added user with id ' + id);
+       $rootScope.myid = id;
+       console.log('$rootScope.myid value = ' + $rootScope.myid);
+       list.$indexFor(id); // returns location in the array
+       newUserId = id;
+       //createTags(newUserTagsObj, 'user'); // just create tags for this object (has all the new tags)
+       //addProject(newProjectObj);
        console.log(Object.keys(newUserTagsObj));
      });
     }
@@ -270,7 +290,7 @@ skillFuelApp
       
       var i = 0; // index for all tags obj 
       // assembles object with tags depending on needs and knows arrays. *** user and project to be added later
-      // user tags to be added to user.tags in database. Adds to newUserTagsObj from user "independent" tags
+      // user tags to be added to user.tags in database. Adds to newUserTagsObj from user 'independent' tags
       // loops from user tags
       for (var j = 0; j < newEntryObj.needs.length; j++) {
         newUserTagsObj[i] = {name:'',project:'',isNeed:'',user:''};
